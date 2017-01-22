@@ -114,7 +114,7 @@ class SecureTelegramBot:
 
             if input_pass_md5 == self.password:
                 self.users['users'].append(
-                    ***REMOVED*** 'username': message['from']['first_name'], 
+                    ***REMOVED*** 'user_id': message['from']['id'], 
                       'chat_id': message['chat']['id']
                     ***REMOVED***
                 )
@@ -131,10 +131,23 @@ class SecureTelegramBot:
     def send_start_message(self, message):
         text = 'Hola,\neste es un bot privado de los Iluminados. Para saber cómo empezar a usarlo, escribe /help'
         self.send_message(text, message['chat']['id'])
+    
+    def user_has_rigths(self, user_id):
+        users = self.users['users']
+                
+        user_ids = [user['user_id'] for user in users]
         
+        try:
+            user_ids.index(user_id)
+            return True
+        except ValueError:
+            return False
+    
     def process_code(self, message, command):
         if len(command) == 2:
-            passcode = command[-1]
-            
+            if self.user_has_rigths(message['from']['id']):
+                passcode = command[-1]
+            else:
+                self.send_message("Lo siento, pero este bot es privado. Necesitas usar el comando /registra para registrarte con la contraseña. Si quieres tener acceso al bot, pregunta en tu comunidad local.", message['chat']['id'])
         else:
-            self.send_message("Falta la contraseña", message['chat']['id'])
+            self.send_message("Falta el código", message['chat']['id'])
