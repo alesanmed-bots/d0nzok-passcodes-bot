@@ -100,14 +100,17 @@ class SecureTelegramBot:
                 self.register_user(message, command)
             elif command[0] == '/start':
                 self.send_start_message(message)
+            elif command[0] == '/send_code':
+                self.process_code(message, command)
             else:
                 self.send_message("Comando desconocido", message['chat']['id'])
                 
     def register_user(self, message, command):
         if len(command) == 2:
-            input_pass = command[-1];
-            input_pass_md5 = self.md5.update(bytes(input_pass, 'utf-8'));
-            input_pass_md5 = self.md5.hexdigest();
+            input_pass = command[-1]
+            self.md5 = hashlib.md5()
+            input_pass_md5 = self.md5.update(bytes(input_pass, 'utf-8'))
+            input_pass_md5 = self.md5.hexdigest()
 
             if input_pass_md5 == self.password:
                 self.users['users'].append(
@@ -117,7 +120,7 @@ class SecureTelegramBot:
                 )
 
                 with open('files/users.json', 'w') as users_file:
-                    json.dump(self.users, users_file);
+                    json.dump(self.users, users_file)
 
                 self.send_message("Registro correcto. Bienvenido, ***REMOVED***0***REMOVED***".format(message['from']['first_name']), message['chat']['id'])
             else:
@@ -128,3 +131,10 @@ class SecureTelegramBot:
     def send_start_message(self, message):
         text = 'Hola,\neste es un bot privado de los Iluminados. Para saber cómo empezar a usarlo, escribe /help'
         self.send_message(text, message['chat']['id'])
+        
+    def process_code(self, message, command):
+        if len(command) == 2:
+            passcode = command[-1]
+            
+        else:
+            self.send_message("Falta la contraseña", message['chat']['id'])
