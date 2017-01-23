@@ -8,9 +8,9 @@ if __name__ == "__main__":
     with open('files/security.json', 'r') as security_file:
         security = json.load(security_file);
     
-    URL = "https://api.telegram.org/bot***REMOVED******REMOVED***/".format(security["token"])
+    URL = "https://api.telegram.org/bot{}/".format(security["token"])
     
-    PasscodesBot = SecureTelegramBot(URL, security["token"], "password")
+    PasscodesBot = SecureTelegramBot(URL, security["token"], security['password'])
     
     logger = PasscodesBot.logger
     offset = None;

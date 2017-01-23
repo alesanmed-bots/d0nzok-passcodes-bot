@@ -40,6 +40,17 @@ class SecureTelegramBot:
     
         fileHandler.setFormatter(formatter)
         self.logger.addHandler(fileHandler)
+        
+        self.passcodesLogger = logging.getLogger('passcodes-log');
+        self.passcodesLogger.setLevel(logging.DEBUG);
+    
+        fileHandler = logging.FileHandler('./sended_passcodes.log');
+        fileHandler.setLevel(logging.DEBUG);
+    
+        formatter = logging.Formatter(fmt='[%(asctime)s] %(levelname)s: %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
+    
+        fileHandler.setFormatter(formatter)
+        self.passcodesLogger.addHandler(fileHandler)
     
     def url_request_get(self, url):
         response = requests.get(url)
@@ -54,7 +65,7 @@ class SecureTelegramBot:
     def get_updates(self, offset=None):
         url = self.URL + "getUpdates"
         if offset:
-            url += "?offset=***REMOVED******REMOVED***".format(offset)
+            url += "?offset={}".format(offset)
         js = self.get_json_from_url(url)
         return js
     
@@ -73,13 +84,13 @@ class SecureTelegramBot:
         return (text, chat_id)
         
     def send_message(self, text, chat_id, markdown='HTML'):
-        url = self.URL + "sendMessage?text=***REMOVED******REMOVED***&chat_id=***REMOVED******REMOVED***&parse_mode=***REMOVED******REMOVED***".format(text, chat_id, markdown)
+        url = self.URL + "sendMessage?text={}&chat_id={}&parse_mode={}".format(text, chat_id, markdown)
         self.url_request_get(url)
         
     def startup_check(self):
         if not os.path.isfile('files/users.json') or not os.access('files/users.json', os.R_OK):
             with codecs.open(os.path.join('files/', 'users.json'), 'w') as users_file:
-                users_file.write(json.dumps(***REMOVED***'users': []***REMOVED***))
+                users_file.write(json.dumps({'users': []}))
     
     def process_messages(self, updates):
         for update in updates['result']:
@@ -91,11 +102,11 @@ class SecureTelegramBot:
             message_text = message['text'];
             command = message_text.split();
     
-            print("Processing message: ***REMOVED***0***REMOVED***".format(command))
-            self.logger.debug("Processing message: ***REMOVED***0***REMOVED***".format(command))
+            print("Processing message: {0}".format(command))
+            self.logger.debug("Processing message: {0}".format(command))
     
-            print("Length: ***REMOVED***0***REMOVED***\nCommand[0]: ***REMOVED***1***REMOVED***".format(len(command), command[0]))
-            self.logger.debug("Length: ***REMOVED***0***REMOVED*** Command[0]: ***REMOVED***1***REMOVED***".format(len(command), command[0]))
+            print("Length: {0}\nCommand[0]: {1}".format(len(command), command[0]))
+            self.logger.debug("Length: {0} Command[0]: {1}".format(len(command), command[0]))
     
             if command[0] == "/registra":
                 self.register_user(message, command)
@@ -117,15 +128,16 @@ class SecureTelegramBot:
 
             if input_pass_md5 == self.password:
                 self.users['users'].append(
-                    ***REMOVED*** 'user_id': message['from']['id'], 
+                    { 'user_id': message['from']['id'],
+                      'user_name': message['from']['first_name'],
                       'chat_id': message['chat']['id']
-                    ***REMOVED***
+                    }
                 )
 
                 with open('files/users.json', 'w') as users_file:
                     json.dump(self.users, users_file)
 
-                self.send_message("Registro correcto. Bienvenido, ***REMOVED***0***REMOVED***".format(message['from']['first_name']), message['chat']['id'])
+                self.send_message("Registro correcto. Bienvenido, {0}".format(message['from']['first_name']), message['chat']['id'])
             else:
                 self.send_message("Contraseña incorrecta", message['chat']['id'])
         else:
@@ -151,19 +163,19 @@ class SecureTelegramBot:
         xxx##keyword###xx
         (# are 2 to 9)
         '''
-        passcode_regex_1 = re.compile('[A-Za-z]***REMOVED***3***REMOVED***[2-9]***REMOVED***2***REMOVED***[A-Za-z]+[2-9]***REMOVED***3***REMOVED***[A-Za-z]***REMOVED***2***REMOVED***')
+        passcode_regex_1 = re.compile('[A-Za-z]{3}[2-9]{2}[A-Za-z]+[2-9]{3}[A-Za-z]{2}')
         
         '''
         x#x#keywordx#xx
         (# are 0 to 9)
         '''
-        passcode_regex_2 = re.compile('[A-Za-z][0-9][A-Za-z][0-9][A-Za-z]+[0-9][A-Za-z]***REMOVED***2***REMOVED***')
+        passcode_regex_2 = re.compile('[A-Za-z][0-9][A-Za-z][0-9][A-Za-z]+[0-9][A-Za-z]{2}')
         
         '''        
         keyword#xx##xx#
         (# are 0 to 9)
         '''
-        passcode_regex_3 = re.compile('[A-Za-z]+[0-9][A-Za-z]***REMOVED***2***REMOVED***[0-9]***REMOVED***2***REMOVED***[A-Za-z]***REMOVED***2***REMOVED***[0-9]')
+        passcode_regex_3 = re.compile('[A-Za-z]+[0-9][A-Za-z]{2}[0-9]{2}[A-Za-z]{2}[0-9]')
         
         '''        
         xxxxxxxx#keyword#
@@ -175,7 +187,7 @@ class SecureTelegramBot:
         #xxx#keywordx#x#x
         (# are 2 to 9)
         '''
-        passcode_regex_5 = re.compile('[2-9][A-Za-z]***REMOVED***3***REMOVED***[2-9][A-Za-z]+[2-9][A-Za-z][2-9][A-Za-z]')
+        passcode_regex_5 = re.compile('[2-9][A-Za-z]{3}[2-9][A-Za-z]+[2-9][A-Za-z][2-9][A-Za-z]')
         
         return (passcode_regex_1.match(passcode) 
                 or passcode_regex_2.match(passcode) 
@@ -192,15 +204,17 @@ class SecureTelegramBot:
                 
                 command_text = message['text'].split(';');
                 
+                self.passcodesLogger.debug('From: {0}. Command: {1}'.format(message['from']['first_name'], message['text']))
+                
                 if self.is_passcode_valid(passcode):
                     items = ""
                     
                     for item in command_text[1:]:
-                        items += "-`***REMOVED***0***REMOVED***`\n".format(item)                   
+                        items += "-`{0}`\n".format(item)                   
                     
-                    res_text = "***REMOVED***0***REMOVED***\n***REMOVED***1***REMOVED***".format(passcode, items)                    
+                    res_text = "{0}\n{1}".format(passcode, items)                    
                     
-                    self.send_message("***REMOVED***0***REMOVED***".format(res_text), message['chat']['id'], 'Markdown') 
+                    self.send_message("{0}".format(res_text), message['chat']['id'], 'Markdown') 
                 else:
                    self.send_message("Código inválido. El formato no es correcto. Para más información acerca de los formatos válidos visita: https://ingress.codes/", message['chat']['id']) 
             else:
