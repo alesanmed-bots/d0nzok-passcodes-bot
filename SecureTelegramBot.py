@@ -26,9 +26,14 @@ class SecureTelegramBot:
         self.startup_check()
         
         self.users = None;
+        
+        self.channel = None;
     
         with open('files/users.json', 'r') as users_file:
             self.users = json.load(users_file);
+            
+        with open('files/security.json', 'r') as secutiry_file:
+            self.channel = json.load(secutiry_file)['channel_test_id'];
         
         self.logger = logging.getLogger('passcode-bot');
         self.logger.setLevel(logging.DEBUG);
@@ -98,6 +103,8 @@ class SecureTelegramBot:
                 message = update['message'];
             except KeyError:
                 message = update['edited_message']
+            
+            message['text'] = message['text'].rstrip('\r\n')           
             
             message_text = message['text'];
             command = message_text.split();
@@ -202,7 +209,7 @@ class SecureTelegramBot:
                 
                 passcode = command_text[0]
                 
-                command_text = message['text'].split(';');
+                command_text = message['text'].replace('\n', '').replace('\r', '').split(';');
                 
                 self.passcodesLogger.debug('From: {0}. Command: {1}'.format(message['from']['first_name'], message['text']))
                 
@@ -212,9 +219,12 @@ class SecureTelegramBot:
                     for item in command_text[1:]:
                         items += "-`{0}`\n".format(item)                   
                     
-                    res_text = "{0}\n{1}".format(passcode, items)                    
                     
-                    self.send_message("{0}".format(res_text), message['chat']['id'], 'Markdown') 
+                    self.send_message("{0}".format(passcode), message['chat']['id'], 'Markdown') 
+                    self.send_message("{0}".format(items), message['chat']['id'], 'Markdown') 
+                    
+                    self.send_message("{0}".format(passcode), self.channel, 'Markdown')
+                    self.send_message("{0}".format(items), self.channel, 'Markdown')
                 else:
                    self.send_message("Código inválido. El formato no es correcto. Para más información acerca de los formatos válidos visita: https://ingress.codes/", message['chat']['id']) 
             else:
