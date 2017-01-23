@@ -10,7 +10,7 @@ if __name__ == "__main__":
     
     URL = "https://api.telegram.org/bot***REMOVED******REMOVED***/".format(security["token"])
     
-    PasscodesBot = SecureTelegramBot(URL, security["token"], "e7tSaADNsTBTXu6a")
+    PasscodesBot = SecureTelegramBot(URL, security["token"], "password")
     
     logger = PasscodesBot.logger
     offset = None;
@@ -23,4 +23,4 @@ if __name__ == "__main__":
             offset = PasscodesBot.get_last_update_id(updates) + 1;
             PasscodesBot.process_messages(updates);
 
-            time.sleep(1);    
+            time.sleep(0.5);    

@@ -9,6 +9,7 @@ import requests
 import hashlib
 import codecs
 import os
+import re
 import logging
 
 
@@ -71,8 +72,8 @@ class SecureTelegramBot:
         chat_id = updates["result"][last_update]["message"]["chat"]["id"]
         return (text, chat_id)
         
-    def send_message(self, text, chat_id):
-        url = self.URL + "sendMessage?text=***REMOVED******REMOVED***&chat_id=***REMOVED******REMOVED***".format(text, chat_id)
+    def send_message(self, text, chat_id, markdown='HTML'):
+        url = self.URL + "sendMessage?text=***REMOVED******REMOVED***&chat_id=***REMOVED******REMOVED***&parse_mode=***REMOVED******REMOVED***".format(text, chat_id, markdown)
         self.url_request_get(url)
         
     def startup_check(self):
@@ -100,8 +101,10 @@ class SecureTelegramBot:
                 self.register_user(message, command)
             elif command[0] == '/start':
                 self.send_start_message(message)
-            elif command[0] == '/send_code':
+            elif command[0] == '/sendcode':
                 self.process_code(message, command)
+            elif command[0] == '/help':
+                self.send_help(message)
             else:
                 self.send_message("Comando desconocido", message['chat']['id'])
                 
@@ -142,12 +145,69 @@ class SecureTelegramBot:
             return True
         except ValueError:
             return False
+            
+    def is_passcode_valid(self, passcode):        
+        '''
+        xxx##keyword###xx
+        (# are 2 to 9)
+        '''
+        passcode_regex_1 = re.compile('[A-Za-z]***REMOVED***3***REMOVED***[2-9]***REMOVED***2***REMOVED***[A-Za-z]+[2-9]***REMOVED***3***REMOVED***[A-Za-z]***REMOVED***2***REMOVED***')
+        
+        '''
+        x#x#keywordx#xx
+        (# are 0 to 9)
+        '''
+        passcode_regex_2 = re.compile('[A-Za-z][0-9][A-Za-z][0-9][A-Za-z]+[0-9][A-Za-z]***REMOVED***2***REMOVED***')
+        
+        '''        
+        keyword#xx##xx#
+        (# are 0 to 9)
+        '''
+        passcode_regex_3 = re.compile('[A-Za-z]+[0-9][A-Za-z]***REMOVED***2***REMOVED***[0-9]***REMOVED***2***REMOVED***[A-Za-z]***REMOVED***2***REMOVED***[0-9]')
+        
+        '''        
+        xxxxxxxx#keyword#
+        (# are 2 to 9)
+        '''
+        passcode_regex_4 = re.compile('[A-Za-z]+[2-9][A-Za-z]+[2-9]')
+        
+        '''        
+        #xxx#keywordx#x#x
+        (# are 2 to 9)
+        '''
+        passcode_regex_5 = re.compile('[2-9][A-Za-z]***REMOVED***3***REMOVED***[2-9][A-Za-z]+[2-9][A-Za-z][2-9][A-Za-z]')
+        
+        return (passcode_regex_1.match(passcode) 
+                or passcode_regex_2.match(passcode) 
+                or passcode_regex_3.match(passcode) 
+                or passcode_regex_4.match(passcode) 
+                or passcode_regex_5.match(passcode))
     
     def process_code(self, message, command):
-        if len(command) == 2:
+        if len(command) >= 2:
             if self.user_has_rigths(message['from']['id']):
-                passcode = command[-1]
+                command_text = command[1].split(';')
+                
+                passcode = command_text[0]
+                
+                command_text = message['text'].split(';');
+                
+                if self.is_passcode_valid(passcode):
+                    items = ""
+                    
+                    for item in command_text[1:]:
+                        items += "-`***REMOVED***0***REMOVED***`\n".format(item)                   
+                    
+                    res_text = "***REMOVED***0***REMOVED***\n***REMOVED***1***REMOVED***".format(passcode, items)                    
+                    
+                    self.send_message("***REMOVED***0***REMOVED***".format(res_text), message['chat']['id'], 'Markdown') 
+                else:
+                   self.send_message("Código inválido. El formato no es correcto. Para más información acerca de los formatos válidos visita: https://ingress.codes/", message['chat']['id']) 
             else:
                 self.send_message("Lo siento, pero este bot es privado. Necesitas usar el comando /registra para registrarte con la contraseña. Si quieres tener acceso al bot, pregunta en tu comunidad local.", message['chat']['id'])
         else:
             self.send_message("Falta el código", message['chat']['id'])
+            
+    def send_help(self, message):
+        text = 'El uso de este bot es el siguiente:\n-/start: Comienza la conversación con el bot\n-/help: Muestra esta ayuda\n-/registra contraseña: Te registras al bot con la contraseña indicada. Esto permite que envíes códigos de acceso.\n-/sendcode passcode;recompensa 1;recompensa 2;recompensa X: Envía el código de acceso `passcode` con las recompensas `recompensa 1`, `recompensa 2` y así todas las que quieras. Las recompensas son opcionales.'
+        self.send_message(text, message['chat']['id'], 'Markdown')
