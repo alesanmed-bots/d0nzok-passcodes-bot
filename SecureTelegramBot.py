@@ -15,25 +15,27 @@ import logging
 
 class SecureTelegramBot:
     
-    def __init__(self, URL, token, password):
+    def __init__(self, URL, token):
         self.URL = URL
         self.token = token
+    
         
-        self.md5 = hashlib.md5();
-        self.md5.update(bytes(password, 'utf-8'))
-        self.password = self.md5.hexdigest()
         
         self.startup_check()
         
         self.users = None;
         
         self.channel = None;
+        
+        self.v_api_key = None;
     
         with open('files/users.json', 'r') as users_file:
             self.users = json.load(users_file);
             
         with open('files/security.json', 'r') as secutiry_file:
-            self.channel = json.load(secutiry_file)['channel_test_id'];
+            security_json = json.load(secutiry_file)
+            self.channel = security_json['channel_test_id'];
+            self.v_api_key = security_json['v_api_key']
         
         self.logger = logging.getLogger('passcode-bot');
         self.logger.setLevel(logging.DEBUG);
@@ -154,16 +156,27 @@ class SecureTelegramBot:
         text = 'Hola,\neste es un bot privado de los Iluminados. Para saber cómo empezar a usarlo, escribe /help'
         self.send_message(text, message['chat']['id'])
     
-    def user_has_rigths(self, user_id):
-        users = self.users['users']
-                
-        user_ids = [user['user_id'] for user in users]
+    def user_has_rigths(self, user_id, chat_id):
+        v_url = "https://v.enl.one/api/v1/search?telegramId={0}&apikey={1}".format(user_id, self.v_api_key)
         
-        try:
-            user_ids.index(user_id)
-            return True
-        except ValueError:
-            return False
+        response = requests.get(v_url)
+        v_content = json.loads(response.content.decode("utf8"))
+        
+        res = False        
+        
+        if v_content['status'] == "ok" and len(v_content['data']):
+            self.send_message("Hi, you are in V. Your V agent name is {0}, your level is {1} and you have {2} points."
+            .format(v_content['data'][0]['agent'], 
+                    v_content['data'][0]['vlevel'], 
+                    v_content['data'][0]['vpoints']), chat_id)
+            
+            res = (v_content['status'] == "ok" 
+                    and v_content['data'][0]['verified'] 
+                    and not v_content['data'][0]['blacklisted']
+                    and not v_content['data'][0]['flagged']
+                    and not v_content['data'][0]['quarantine'])
+        
+        return res
             
     def is_passcode_valid(self, passcode):        
         '''
@@ -204,7 +217,7 @@ class SecureTelegramBot:
     
     def process_code(self, message, command):
         if len(command) >= 2:
-            if self.user_has_rigths(message['from']['id']):
+            if self.user_has_rigths(message['from']['id'], message['chat']['id']):
                 command_text = command[1].split(';')
                 
                 passcode = command_text[0]
@@ -223,15 +236,16 @@ class SecureTelegramBot:
                     self.send_message("{0}".format(passcode), message['chat']['id'], 'Markdown') 
                     self.send_message("{0}".format(items), message['chat']['id'], 'Markdown') 
                     
-                    self.send_message("{0}".format(passcode), self.channel, 'Markdown')
-                    self.send_message("{0}".format(items), self.channel, 'Markdown')
+                    # self.send_message("{0}".format(passcode), self.channel, 'Markdown')
+                    # self.send_message("{0}".format(items), self.channel, 'Markdown')
                 else:
                    self.send_message("Código inválido. El formato no es correcto. Para más información acerca de los formatos válidos visita: https://ingress.codes/", message['chat']['id']) 
             else:
-                self.send_message("Lo siento, pero este bot es privado. Necesitas usar el comando /registra para registrarte con la contraseña. Si quieres tener acceso al bot, pregunta en tu comunidad local.", message['chat']['id'])
+                self.send_message("I'm sorry, but the use of this bot is restricted. You need to be registered, verified and not be flagged, quearantined or blacklisted in V in order to use this bot. If you don't know about V, please ask your local community.", message['chat']['id'])
         else:
             self.send_message("Falta el código", message['chat']['id'])
             
     def send_help(self, message):
         text = 'El uso de este bot es el siguiente:\n-/start: Comienza la conversación con el bot\n-/help: Muestra esta ayuda\n-/registra contraseña: Te registras al bot con la contraseña indicada. Esto permite que envíes códigos de acceso.\n-/sendcode passcode;recompensa 1;recompensa 2;recompensa X: Envía el código de acceso `passcode` con las recompensas `recompensa 1`, `recompensa 2` y así todas las que quieras. Las recompensas son opcionales.'
         self.send_message(text, message['chat']['id'], 'Markdown')
+        

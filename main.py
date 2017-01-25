@@ -10,7 +10,7 @@ if __name__ == "__main__":
     
     URL = "https://api.telegram.org/bot{}/".format(security["token"])
     
-    PasscodesBot = SecureTelegramBot(URL, security["token"], security['password'])
+    PasscodesBot = SecureTelegramBot(URL, security["token"])
     
     logger = PasscodesBot.logger
     offset = None;
