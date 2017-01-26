@@ -170,7 +170,9 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
             await self.sender.sendMessage("I'm sorry, but the use of this bot is restricted. You need to be registered, verified and not be flagged, quearantined or blacklisted in V in order to use this bot. If you don't know about V, please ask your local community.")
             
     async def on__idle(self, event):
-        await self.sender.sendMessage("I'm sorry, you have taken too long to complete the process (more than 2 minutes). Please, start again.")
+        if self._state != BotStates.AWAITING_COMMAND:
+            await self.sender.sendMessage("I'm sorry, you have taken too long to complete the process (more than 2 minutes). Please, start again.")
+        
         self.close()
             
     async def user_has_rigths(self, user_id):
