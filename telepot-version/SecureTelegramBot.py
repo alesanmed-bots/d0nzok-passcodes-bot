@@ -6,8 +6,10 @@ Created on Tue Jan 24 20:42:55 2017
 """
 import json
 import requests
+import sqlite3
 import logging
 import telepot
+from datetime import datetime
 import re
 from States import BotStates
 from telepot.namedtuple import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
@@ -116,8 +118,19 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
                 await self.sender.sendMessage("Ok. Thank you very much for your contribution.", 
                 reply_markup=removeKeyboard)
                 
-                await self.sender.sendMessage(self._passcode)
-                self._passcode = None
+                conn = sqlite3.connect('files/passcodes.db')
+
+                cursor = conn.cursor()                
+                try:
+                    cursor.execute("insert into passcodes values(?, ?, ?)", (self._passcode, datetime.now().isoformat(), msg['from']['id']))
+                    
+                    conn.commit()
+                    conn.close()
+                    
+                    await self.sender.sendMessage(self._passcode)
+                    self._passcode = None
+                except sqlite3.IntegrityError:
+                    self.sender.sendMessage("Sorry, there was a problem processing your request. Please, try again and, if the problem persists, please contact @d0nzok")
                 
                 self.close()
         elif self._state == BotStates.AWAITING_REWARD:
@@ -145,27 +158,40 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
             self.passcodesLogger.debug('From: {0}. Command: {1}'.format(user_name, passcode))
             
             if self.is_passcode_valid(passcode):
-                self._passcode = passcode
+                conn = sqlite3.connect('files/passcodes.db')
                 
-                keyboard = ReplyKeyboardMarkup(
-                    keyboard=[[KeyboardButton(text="Yes", 
-                                             request_contact=False, 
-                                             request_location=False),
-                            KeyboardButton(text="No", 
-                                             request_contact=False, 
-                                             request_location=False)]],
-                    resize_keyboard=True,
-                    one_time_keyboard=True,
-                    selective=True
-                )
+                cursor = conn.cursor()
                 
-                self._state = BotStates.AWAITING_YESNO
-                await self.sender.sendMessage("Do you know the passcode reward?", reply_markup=keyboard)
+                cursor.execute("SELECT count(*) from passcodes where passcode=?", (passcode,))
                 
-                # self.send_message("{0}".format(passcode), self.channel, 'Markdown')
-                # self.send_message("{0}".format(items), self.channel, 'Markdown')
+                count = cursor.fetchone()[0]
+                
+                print("COUNT: {0}".format(count))
+                
+                if count == 0:
+                    self._passcode = passcode
+                    
+                    keyboard = ReplyKeyboardMarkup(
+                        keyboard=[[KeyboardButton(text="Yes", 
+                                                 request_contact=False, 
+                                                 request_location=False),
+                                KeyboardButton(text="No", 
+                                                 request_contact=False, 
+                                                 request_location=False)]],
+                        resize_keyboard=True,
+                        one_time_keyboard=True,
+                        selective=True
+                    )
+                    
+                    self._state = BotStates.AWAITING_YESNO
+                    await self.sender.sendMessage("Do you know the passcode reward?", reply_markup=keyboard)
+                    
+                    # self.send_message("{0}".format(passcode), self.channel, 'Markdown')
+                    # self.send_message("{0}".format(items), self.channel, 'Markdown')
+                else:
+                    await self.sender.sendMessage("Sorry but that passcode has been already sended. You can look for it and its reward in the channel")
             else:
-               await self.sender.sendMessage("I'm sorry but the passcode is invalid") 
+               await self.sender.sendMessage("I'm sorry but the passcode is invalid. I'll wait for a valid one...") 
         else:
             await self.sender.sendMessage("I'm sorry, but the use of this bot is restricted. You need to be registered, verified and not be flagged, quearantined or blacklisted in V in order to use this bot. If you don't know about V, please ask your local community.")
             
