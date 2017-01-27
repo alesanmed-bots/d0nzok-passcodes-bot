@@ -98,7 +98,7 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
                 self._passcode = None
                 
                 removeKeyboard = ReplyKeyboardRemove(remove_keyboard=True, selective=False)
-                text = 'Bot usage:\n-/start: Starts the conversation with the bot\n-/help: Shows this help\n-/sendcode: Starts the sending process. Please remind that you need to be verified at rocks and/or V to send a passcode.'
+                text = 'Bot usage:\n-/start: Starts the conversation with the bot\n-/help: Shows this help\n-/sendcode: Starts the sending process. Please remind that you need to be verified at rocks and/or V to send a passcode. You have to link your Telegram ID in Rocks or V so I can look for you.'
                 await self.sender.sendMessage(text, parse_mode='Markdown', reply_markup=removeKeyboard)
             else:
                 self._state = BotStates.AWAITING_COMMAND
@@ -113,7 +113,7 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
                 self._state = BotStates.AWAITING_REWARD
                 removeKeyboard = ReplyKeyboardRemove(remove_keyboard=True, selective=False)
                 await self.sender.sendMessage(
-                "Please, send the reward with the following format:\n-Reward 1 (Amount)\n-Reward 2 (Amount)", 
+                "Please, send the reward with the following format (take notice of the dash at the beggining of each line):\n-Reward 1 (Amount)\n-Reward 2 (Amount)", 
                 reply_markup=removeKeyboard)
             else:
                 self._state = BotStates.AWAITING_COMMAND
@@ -153,7 +153,7 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
                 self._passcode = None
                 self.close()
             else:
-                await self.sender.sendMessage("I'm sorry. I can't understand the reward. Please, send me the reward with the following format:\n-Reward 1 (Amount)\n-Reward 2 (Amount)")
+                await self.sender.sendMessage("I'm sorry. I can't understand the reward. Please, send me the reward with the following format (take notice of the dash at the beggining of each line):\n-Reward 1 (Amount)\n-Reward 2 (Amount)")
   
     async def process_code(self, passcode, user_id, user_name):
         if await self.user_has_rights(user_id):
