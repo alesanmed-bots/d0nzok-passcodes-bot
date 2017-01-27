@@ -23,6 +23,8 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
         
         self._v_api_key = None;
         
+        self._rocks_api_key = None;
+        
         self._state = BotStates.AWAITING_COMMAND
         
         self._passcode = None
@@ -31,6 +33,7 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
             security_json = json.load(secutiry_file)
             self._channel = security_json['channel_test_id'];
             self._v_api_key = security_json['v_api_key']
+            self._rocks_api_key = security_json['rocks_api_key']
         
         self.logger = logging.getLogger('passcode-bot');
         self.logger.setLevel(logging.DEBUG);
@@ -95,7 +98,7 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
                 self._passcode = None
                 
                 removeKeyboard = ReplyKeyboardRemove(remove_keyboard=True, selective=False)
-                text = 'El uso de este bot es el siguiente:\n-/start: Comienza la conversación con el bot\n-/help: Muestra esta ayuda\n-/registra contraseña: Te registras al bot con la contraseña indicada. Esto permite que envíes códigos de acceso.\n-/sendcode passcode;recompensa 1;recompensa 2;recompensa X: Envía el código de acceso `passcode` con las recompensas `recompensa 1`, `recompensa 2` y así todas las que quieras. Las recompensas son opcionales.'
+                text = 'Bot usage:\n-/start: Starts the conversation with the bot\n-/help: Shows this help\n-/sendcode: Starts the sending process. Please remind that you need to be verified at rocks and/or V to send a passcode.'
                 await self.sender.sendMessage(text, parse_mode='Markdown', reply_markup=removeKeyboard)
             else:
                 self._state = BotStates.AWAITING_COMMAND
@@ -153,7 +156,7 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
                 await self.sender.sendMessage("I'm sorry. I can't understand the reward. Please, send me the reward with the following format:\n-Reward 1 (Amount)\n-Reward 2 (Amount)")
   
     async def process_code(self, passcode, user_id, user_name):
-        if await self.user_has_rigths(user_id):
+        if await self.user_has_rights(user_id):
             
             self.passcodesLogger.debug('From: {0}. Command: {1}'.format(user_name, passcode))
             
@@ -193,19 +196,26 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
             else:
                await self.sender.sendMessage("I'm sorry but the passcode is invalid. I'll wait for a valid one...") 
         else:
-            await self.sender.sendMessage("I'm sorry, but the use of this bot is restricted. You need to be registered, verified and not be flagged, quearantined or blacklisted in V in order to use this bot. If you don't know about V, please ask your local community.")
+            await self.sender.sendMessage("I'm sorry, but the use of this bot is restricted. You need to be registered, verified and not be flagged, quearantined or blacklisted in V or Rocks in order to use this bot. If you don't know about V or Rocks, please ask your local community.")
             
     async def on__idle(self, event):
         if self._state != BotStates.AWAITING_COMMAND:
-            await self.sender.sendMessage("I'm sorry, you have taken too long to complete the process (more than 2 minutes). Please, start again.")
+            removeKeyboard = ReplyKeyboardRemove(remove_keyboard=True, selective=False) 
+            
+            await self.sender.sendMessage("I'm sorry, you have taken too long to complete the process (more than 2 minutes). Please, start again.", reply_markup=removeKeyboard)
         
         self.close()
             
-    async def user_has_rigths(self, user_id):
+    async def user_has_rights(self, user_id):
         v_url = "https://v.enl.one/api/v1/search?telegramId={0}&apikey={1}".format(user_id, self._v_api_key)
+        rocks_url = "https://enlightened.rocks/api/user/status/{0}?apikey={1}".format(user_id, self._rocks_api_key)
         
         response = requests.get(v_url)
         v_content = json.loads(response.content.decode("utf8"))
+        
+        response = requests.get(rocks_url)
+        rocks_content = json.loads(response.content.decode("utf-8"))
+        print(rocks_content)
         
         res = False        
         
@@ -217,6 +227,11 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
                     and not v_content['data'][0]['blacklisted']
                     and not v_content['data'][0]['flagged']
                     and not v_content['data'][0]['quarantine'])
+                    
+        if len(rocks_content):
+            await self.sender.sendMessage('Hi, you are in Rocks. Your Rocks agent name is {0}, and your "verify" status is:{1}.'.format(rocks_content['agentid'], rocks_content['verified']))
+            
+            res = rocks_content['verified']
         
         return res
         
