@@ -77,7 +77,7 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
         
         if self._state == BotStates.AWAITING_COMMAND and command[0][0] != '/':
             self._state = BotStates.AWAITING_COMMAND
-            await self.sender.sendMessage('I can\'t understand you. If you want to know the available command, please type `/help`.', parse_mode='Markdown')
+            await self.sender.sendMessage('I can\'t understand you. If you want to know the available commands, please type `/help`.', parse_mode='Markdown')
         elif command[0][0] == '/':
             if command[0] == '/start':
                 self._state = BotStates.AWAITING_COMMAND
@@ -199,7 +199,7 @@ class SecureTelegramBot(telepot.aio.helper.ChatHandler):
                 else:
                     await self.sender.sendMessage("Sorry but that passcode has been already sended. You can look for it and its reward in the channel")
             else:
-               await self.sender.sendMessage("I'm sorry but the passcode is invalid. I'll wait for a valid one...") 
+               await self.sender.sendMessage("I'm sorry but the passcode is invalid. If you think that the code you sended is valid, please contact either with @d0nzok or @Hulk32. I'll wait for a valid one...") 
         else:
             await self.sender.sendMessage("I'm sorry, but the use of this bot is restricted. You need to be registered, verified and not be flagged, quearantined or blacklisted in V or Rocks in order to use this bot. If you don't know about V or Rocks, please ask your local community.")
             
