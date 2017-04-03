@@ -1,6 +1,15 @@
-import time
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jan 25 23:15:01 2017
+
+@author: Donzok
+"""
+import telepot
+import sqlite3
 import json
+from telepot.aio.delegate import per_chat_id, create_open, pave_event_space
 from SecureTelegramBot import SecureTelegramBot
+import asyncio
 
 if __name__ == "__main__":
     security = None    
@@ -8,19 +17,23 @@ if __name__ == "__main__":
     with open('files/security.json', 'r') as security_file:
         security = json.load(security_file);
     
-    URL = "https://api.telegram.org/bot{}/".format(security["token"])
+    conn = sqlite3.connect('files/passcodes.db')
     
-    PasscodesBot = SecureTelegramBot(URL, security["token"])
+    cursor = conn.cursor()
     
-    logger = PasscodesBot.logger
-    offset = None;
-    print("Waiting for messages...");
-    logger.debug("Waiting for messages...")
-
-    while True:
-        updates = PasscodesBot.get_updates(offset);
-        if(len(updates["result"]) > 0):
-            offset = PasscodesBot.get_last_update_id(updates) + 1;
-            PasscodesBot.process_messages(updates);
-
-            time.sleep(0.5);    
+    cursor.execute('''CREATE TABLE IF NOT EXISTS passcodes (passcode  text primary key, date text, user text)''')
+    
+    conn.commit()
+    
+    conn.close()
+    
+    bot = telepot.aio.DelegatorBot(security['token_test'], [
+        pave_event_space()(
+            per_chat_id(), create_open, SecureTelegramBot, timeout=120),
+    ])
+    
+    loop = asyncio.get_event_loop()
+    loop.create_task(bot.message_loop())
+    print('Listening ...')
+    
+    loop.run_forever()
