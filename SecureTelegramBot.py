@@ -35,7 +35,7 @@ class SecureTelegramBot(ChatHandler):
 
         with open('files/security.json', 'r') as secutiry_file:
             security_json = json.load(secutiry_file)
-            self._channel = security_json['channel_test_id']
+            self._channel = security_json['channel_id']
             self._v_api_key = security_json['v_api_key']
             self._rocks_api_key = security_json['rocks_api_key']
 

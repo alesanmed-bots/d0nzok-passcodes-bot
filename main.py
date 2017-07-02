@@ -22,7 +22,7 @@ if __name__ == "__main__":
     
     db.init_db()
     
-    bot = telepot.aio.DelegatorBot(security['token_test'], [
+    bot = telepot.aio.DelegatorBot(security['token'], [
         include_callback_query_chat_id(pave_event_space())(
             per_chat_id(), create_open, SecureTelegramBot, timeout=120),
     ])
