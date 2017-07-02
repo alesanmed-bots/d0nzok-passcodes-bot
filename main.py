@@ -7,7 +7,10 @@ Created on Wed Jan 25 23:15:01 2017
 import telepot
 import sqlite3
 import json
+import database.transactions as db
 from telepot.aio.delegate import per_chat_id, create_open, pave_event_space
+from telepot.delegate import include_callback_query_chat_id
+
 from SecureTelegramBot import SecureTelegramBot
 import asyncio
 
@@ -15,20 +18,12 @@ if __name__ == "__main__":
     security = None    
     
     with open('files/security.json', 'r') as security_file:
-        security = json.load(security_file);
+        security = json.load(security_file)
     
-    conn = sqlite3.connect('files/passcodes.db')
-    
-    cursor = conn.cursor()
-    
-    cursor.execute('''CREATE TABLE IF NOT EXISTS passcodes (passcode  text primary key, date text, user text)''')
-    
-    conn.commit()
-    
-    conn.close()
+    db.init_db()
     
     bot = telepot.aio.DelegatorBot(security['token_test'], [
-        pave_event_space()(
+        include_callback_query_chat_id(pave_event_space())(
             per_chat_id(), create_open, SecureTelegramBot, timeout=120),
     ])
     
