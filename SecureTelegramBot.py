@@ -281,9 +281,15 @@ class SecureTelegramBot(ChatHandler):
 
         votes = db.count_votes(msg['message']['message_id'])
 
-        inline_button = InlineKeyboardMarkup(
-            inline_keyboard=[[InlineKeyboardButton(text="Passcode Fully Redeemed - {0} {1}".format(votes, u'\U0000274C'),
+        if votes < 10:
+            inline_button = InlineKeyboardMarkup(
+                inline_keyboard=[[InlineKeyboardButton(text="Passcode Fully Redeemed - {0}".format(votes),
                                                    callback_data=query_data)]])
+        else:
+            inline_button = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text="Passcode Fully Redeemed - {0} {1}".format(votes, u'\U0000274C'),
+                                          callback_data=query_data)]])
 
         msg_ident = telepot.message_identifier(msg['message'])
 
