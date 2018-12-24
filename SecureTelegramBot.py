@@ -53,7 +53,7 @@ class SecureTelegramBot(ChatHandler):
         self.passcodesLogger = logging.getLogger('passcodes-log')
         self.passcodesLogger.setLevel(logging.DEBUG)
 
-        file_handler = logging.FileHandler('./sended_passcodes.log')
+        file_handler = logging.FileHandler('./sent_passcodes.log')
         file_handler.setLevel(logging.DEBUG)
 
         formatter = logging.Formatter(fmt='[%(asctime)s] %(levelname)s: %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
@@ -115,13 +115,13 @@ class SecureTelegramBot(ChatHandler):
                 self._passcode = None
 
                 remove_keyboard = ReplyKeyboardRemove(remove_keyboard=True, selective=False)
-                text = 'Bot usage:\n-/start: Starts the conversation with the bot\n' \
-                       '-/help: Shows this help\n' \
-                       '-/sendcode: Starts the sending process. Please remind that you need to be verified at ' \
+                text = 'Bot usage:\n/start: Starts the conversation with the bot\n' \
+                       '/help: Shows this help\n' \
+                       '/sendcode: Starts the sending process. Please remind that you need to be verified at ' \
                        'rocks and/or V to send a passcode. You have to link your Telegram ID in ' \
                        'Rocks or V so I can look for you.'
                 await self.sender.sendMessage(text, parse_mode='Markdown', reply_markup=remove_keyboard)
-            elif command[0] == '/lastsended' and msg['from']['username'] == 'd0nzok':
+            elif command[0] == '/lastsent' and msg['from']['username'] == 'alesanmed':
                 if len(command) > 1:
                     passcodes = db.get_last_n_passcodes(command[1])
 
@@ -141,7 +141,7 @@ class SecureTelegramBot(ChatHandler):
 
                 remove_keyboard = ReplyKeyboardRemove(remove_keyboard=True, selective=False)
                 await self.sender.sendMessage(
-                    'I can\'t understand you. If you want to know the available command, please type `/help`.',
+                    'I can\'t understand you. If you want to know the available commands, please type `/help`.',
                     parse_mode='Markdown', reply_markup=remove_keyboard)
         elif self._state == BotStates.AWAITING_PASSCODE:
 
@@ -154,7 +154,7 @@ class SecureTelegramBot(ChatHandler):
                 remove_keyboard = ReplyKeyboardRemove(remove_keyboard=True, selective=False)
                 await self.sender.sendMessage(
                     "Please, send the reward with the following format "
-                    "(take notice of the dash at the beggining of each line):\n-Reward 1 (Amount)\n-Reward 2 (Amount)",
+                    "(take notice of the dash at the beginning of each line):\n-Reward 1 (Amount)\n-Reward 2 (Amount)",
                     reply_markup=remove_keyboard)
             else:
                 self._state = BotStates.AWAITING_COMMAND
@@ -203,21 +203,21 @@ class SecureTelegramBot(ChatHandler):
                 try:
                     db.insert_passcode(self._passcode, user)
 
-                    await self.sender.sendMessage(self._passcode)
+                    await self.sender.sendMessage('``{0}``'.format(self._passcode), parse_mode='Markdown')
                     await self.sender.sendMessage(msg['text'])
 
                     inline_button = InlineKeyboardMarkup(
                         inline_keyboard=[[InlineKeyboardButton(text="Passcode Fully Redeemed - 0",
                                                                callback_data=str(msg['from']['id']))]])
 
-                    await self.bot.sendMessage(self._channel, self._passcode)
+                    await self.bot.sendMessage(self._channel, '``{0}``'.format(self._passcode), parse_mode='Markdown')
                     await self.bot.sendMessage(self._channel, msg['text'], reply_markup=inline_button)
 
                     self._passcode = None
                 except sqlite3.IntegrityError:
                     self.sender.sendMessage(
                         "Sorry, there was a problem processing your request. "
-                        "Please, try again and, if the problem persists, please contact @d0nzok")
+                        "Please try again and, if the problem persists, please contact @d0nzok")
 
                 self.close()
             else:
@@ -257,12 +257,12 @@ class SecureTelegramBot(ChatHandler):
                     # self.send_message("{0}".format(items), self.channel, 'Markdown')
                 else:
                     await self.sender.sendMessage(
-                        "Sorry but that passcode has been already sended."
+                        "Sorry but that passcode has been already sent."
                         " You can look for it and its reward in the channel")
             else:
                 await self.sender.sendMessage(
-                    "I'm sorry but the passcode is invalid. If you think that the code you sended is valid, "
-                    "please contact either with @d0nzok or @Hulk32. I'll wait for a valid one...")
+                    "I'm sorry but the passcode is invalid. If you think that the code you sent is valid, "
+                    "please contact either @d0nzok or @Hulk32. I'll wait for a valid one...")
         else:
             await self.sender.sendMessage(
                 "I'm sorry, but the use of this bot is restricted. You need to be registered, "
