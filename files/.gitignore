@@ -91,6 +91,3 @@ test.py
 files/users.json
 files/security.json
 telepot-version/files/security.json
-/files/passcodes.db
-
-.idea/*
