@@ -181,7 +181,7 @@ class SecureTelegramBot(ChatHandler):
                 except sqlite3.IntegrityError:
                     self.sender.sendMessage(
                         "Sorry, there was a problem processing your request. "
-                        "Please, try again and, if the problem persists, please contact @d0nzok")
+                        "Please, try again and, if the problem persists, please contact @alesanmed")
 
                 self.close()
         elif self._state == BotStates.AWAITING_REWARD:
@@ -203,21 +203,21 @@ class SecureTelegramBot(ChatHandler):
                 try:
                     db.insert_passcode(self._passcode, user)
 
-                    await self.sender.sendMessage('``{0}``'.format(self._passcode), parse_mode='Markdown')
+                    await self.sender.sendMessage('`{0}`'.format(self._passcode), parse_mode='Markdown')
                     await self.sender.sendMessage(msg['text'])
 
                     inline_button = InlineKeyboardMarkup(
                         inline_keyboard=[[InlineKeyboardButton(text="Passcode Fully Redeemed - 0",
                                                                callback_data=str(msg['from']['id']))]])
 
-                    await self.bot.sendMessage(self._channel, '``{0}``'.format(self._passcode), parse_mode='Markdown')
+                    await self.bot.sendMessage(self._channel, '`{0}`'.format(self._passcode), parse_mode='Markdown')
                     await self.bot.sendMessage(self._channel, msg['text'], reply_markup=inline_button)
 
                     self._passcode = None
                 except sqlite3.IntegrityError:
                     self.sender.sendMessage(
                         "Sorry, there was a problem processing your request. "
-                        "Please try again and, if the problem persists, please contact @d0nzok")
+                        "Please try again and, if the problem persists, please contact @alesanmed")
 
                 self.close()
             else:
@@ -262,7 +262,7 @@ class SecureTelegramBot(ChatHandler):
             else:
                 await self.sender.sendMessage(
                     "I'm sorry but the passcode is invalid. If you think that the code you sent is valid, "
-                    "please contact either @d0nzok or @Hulk32. I'll wait for a valid one...")
+                    "please contact either @alesanmed or @Hulk32. I'll wait for a valid one...")
         else:
             await self.sender.sendMessage(
                 "I'm sorry, but the use of this bot is restricted. You need to be registered, "
